@@ -1,38 +1,36 @@
 from django.shortcuts import render
-from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_protect
+import json
 
 def index_page(request):
     return render(request, 'index.html')
 
-# @csrf_exempt
-# def qa_view(request):
-#     context = {
-#         "tags": ["Python", "JavaScript", "Java"],
-#         "question": None,
-#         "answer_markdown": None,
-#         "is_loading": False,
-#         "disable_submit": False,
-#         "selected_tags": ["Java"],
-#     }
 
-#     if request.method == "POST":
-#         question = request.POST.get("question")
-#         selected_tags = request.POST.getlist("tags")
-#         context["question"] = question
-#         context["selected_tags"] = selected_tags
+@require_http_methods(["POST"])
+@csrf_protect
+def qa(request):
+    if request.content_type != 'application/json':
+        return JsonResponse("Le contenu doit être au format JSON.")
 
-#         if question and selected_tags:
-#             context["is_loading"] = True
-#             context["disable_submit"] = True
+    try:
+        data = json.loads(request.body)
+        question = data.get("question", "").strip()
+        tags = data.get("tags", [])
 
-#             # Simulation
-#             context["is_loading"] = False
-#             context["answer_markdown"] = f"**Bonne question !**\n\nVous avez demandé : _{question}_\n\n_Tags sélectionnés_ : `{', '.join(selected_tags)}`"
+        if not question:
+            return JsonResponse("Le champ 'question' est requis.", status=400)
 
-#     return render(request, "index.html", {
-#         "question": request.POST.get("question", ""),
-#         "tags": ["Python", "JavaScript", "Java"],
-#         "selected_tags": request.POST.getlist("tags"),
-#         "is_loading": False,  # ou True selon la logique
-#         "answer_markdown": "### test"  # si tu as une réponse
-#     })
+        if not isinstance(tags, list):
+            return JsonResponse("Le champ 'tags' doit être une liste.", status=400)
+
+        # Simuler une réponse
+        dummy_answer = f"Réponse générée pour : « {question} » avec les tags {tags}"
+        return JsonResponse({"answer": dummy_answer})
+
+    except json.JSONDecodeError:
+        return JsonResponse("Format JSON invalide.")
+
+    except Exception as e:
+        return JsonResponse({"error": "Une erreur interne s'est produite."}, status=500)
