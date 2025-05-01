@@ -95,7 +95,7 @@
         }
 
         function toggleTag(button) {
-            const tag = button.textContent.trim();
+            const tag = button.textContent.trim().toLowerCase();
             const isSelected = selectedTags.has(tag);
 
             button.setAttribute("aria-pressed", !isSelected);
